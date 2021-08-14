@@ -11,7 +11,7 @@ class Store {
         })
         
         this._mutations = options.mutations
-        this._actions = options._actions
+        this._actions = options.actions
 
         this.commit = this.commit.bind(this)
         this.dispatch = this.dispatch.bind(this)
