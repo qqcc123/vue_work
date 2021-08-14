@@ -1,8 +1,9 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
-    <ul>
+    <p @click="$store.commit('add')">counter: {{$store.state.counter}}</p>
+    <p @click="$store.dispatch('add')">async counter: {{$store.state.counter}}</p>
+    <!-- <ul>
       <li>
         <a
           href="https://vuejs.org"
@@ -79,7 +80,7 @@
           awesome-vue
         </a>
       </li>
-    </ul>
+    </ul> -->
   </div>
 </template>
 
