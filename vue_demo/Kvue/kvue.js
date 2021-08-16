@@ -41,13 +41,16 @@ function proxy(vm) {
 class Compile {
     constructor(el) {
         this.$el = document.querySelector(el)
-
         this.compile(this.$el)
     }
 
     compile(el) {
         el.childNodes.forEach((node) => {
             if (this.isElement(node)) {
+
+                if (node.childNodes && node.childNodes.length > 0) {
+                    this.compile(node)
+                }
 
             } else if (this.isInter(node)) {
 
@@ -57,6 +60,26 @@ class Compile {
         })
     }
 
+    isDir(attr) {
+        return attr.startsWith("k-");
+      }
+
+    compileElement(node) {
+        Array.from(node.attributes).forEach((attr) => {
+            const attrName = attr.attrName
+            const attrValue = attr.value
+
+            if (this.isDir(attrName)) {
+                const dir = attrName.substring(2);
+            }
+        })
+        
+        const fn = this.$[attr + 'update']
+
+        if (fn && fn())
+
+    }
+
     isElement(node) {
         return node.nodeType == 1
     }
@@ -64,6 +87,28 @@ class Compile {
     isInter(node) {
         return node.nodeType == 3 && /\{\{ .* \}\}/.test(node.textContent)
     }
+
+    text(node, exp) {
+        
+    }
+
+    html() {
+        
+    }
+
+    textUpdater(node, exp) {
+        node.innerText = exp
+    }
+
+    htmlUpdater(node, exp) {
+        node.innerHTML = exp
+    }
+
+    update(vm, value, exp) {
+
+    }
+
+    
 }
 
 class kvue {
