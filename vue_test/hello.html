@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<head>
+    <title>document</title>
+    <style>
+        .active {
+            background-color: "#ff5d23";
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h2 v-bind:title="title">
+            {{title}}
+        </h2>
+        <span v-once, :title="title1">{{title1}}</span>
+        <p>
+            <input type="text" v-model="newCourse" v-on:keydown.enter="addCourse">
+            <button @click="addCourse">新增</button>
+        </p>
+        <p v-if="total == 0">没有任何课程</p>
+        <div v-else>
+            <ul v-for="item in course" :key="item" v-bind:title="item">
+                <!-- <li :class="{active: selectCourse === item}" @click="updatSelectCourse(item)">{{item}}</li> -->
+                <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click="updatSelectCourse(item)">{{item}}</li>
+            </ul>
+        </div>
+        <p>总共 {{totalCount}} 门课程</p>
+    </div>
+
+    <script src="vue.js"></script>
+    <script>
+        function getCourses() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve(["C++", "Java"]) 
+                }, 2000);
+            })
+        }
+        const app = new Vue({
+            el: "#app",
+            data: {
+                title: "hello vue !!!",
+                title1: "hello wo bu bian",
+                newCourse: '',
+                course: [], //"c++", "java", "python"
+                selectCourse: "",
+                totalCount: 0
+            },
+            methods: {
+                addCourse() {
+                    if (this.newCourse == "") {
+                        this.course = []
+                    } else {
+                        this.course.push(this.newCourse)
+                        this.newCourse = ""
+                    }
+                },
+                updatSelectCourse(current) {
+                    this.selectCourse = current
+                    console.log("-----", current)
+                },
+            },
+            computed: {
+                total() {
+                    return this.course.length 
+                }
+            },
+            watch: {
+                course: {
+                    immediate: true,
+                    deep: true,
+                    handler(newValue, oldValue) {
+                        this.totalCount = newValue.length
+                    }
+                }
+            },
+            async created() {
+                const course = await getCourses()
+                this.course = course
+            },
+        })        
+
+        setTimeout(() => {
+            app.title = "嘿嘿嘿 ！！！" ,
+            app.title = "wo yao bian"  
+         }, 1000)
+    </script>
+
+</body>
+
+</html>
