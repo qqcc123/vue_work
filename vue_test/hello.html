@@ -9,6 +9,8 @@
 </head>
 
 <body>
+    
+
     <div id="app">
         <h2 v-bind:title="title">
             {{title}}
@@ -19,17 +21,36 @@
             <button @click="addCourse">新增</button>
         </p>
         <p v-if="total == 0">没有任何课程</p>
-        <div v-else>
-            <ul v-for="item in course" :key="item" v-bind:title="item">
-                <!-- <li :class="{active: selectCourse === item}" @click="updatSelectCourse(item)">{{item}}</li> -->
-                <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click="updatSelectCourse(item)">{{item}}</li>
-            </ul>
-        </div>
+        <!-- 自定义组件 -->
+        <course-list :courses="course"></course-list>
         <p>总共 {{totalCount}} 门课程</p>
     </div>
 
     <script src="vue.js"></script>
     <script>
+        Vue.component('course-list', {
+            data() {
+                return {
+                    selectCourse: "",
+                }
+            },
+            props: {
+                courses: {
+                    type: Array,
+                    default: []
+                }
+            },
+            template: `
+                <div v-else>
+                    <ul v-for="item in courses" :key="item" v-bind:title="item">
+                        <!-- <li :class="{active: selectCourse === item}" @click="updatSelectCourse(item)">{{item}}</li> -->
+                        <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click="selectCourse = item">{{item}}</li>
+                    </ul>
+                </div>
+            `
+
+        })
+
         function getCourses() {
             return new Promise(resolve => {
                 setTimeout(() => {
@@ -44,7 +65,7 @@
                 title1: "hello wo bu bian",
                 newCourse: '',
                 course: [], //"c++", "java", "python"
-                selectCourse: "",
+                // selectCourse: "",
                 totalCount: 0
             },
             methods: {
@@ -56,10 +77,10 @@
                         this.newCourse = ""
                     }
                 },
-                updatSelectCourse(current) {
-                    this.selectCourse = current
-                    console.log("-----", current)
-                },
+                // updatSelectCourse(current) {
+                //     this.selectCourse = current
+                //     console.log("-----", current)
+                // },
             },
             computed: {
                 total() {
