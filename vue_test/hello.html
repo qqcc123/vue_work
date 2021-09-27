@@ -9,19 +9,13 @@
 </head>
 
 <body>
-    
-
     <div id="app">
         <h2 v-bind:title="title">
             {{title}}
         </h2>
-        <span v-once, :title="title1">{{title1}}</span>
-        <p>
-            <input type="text" v-model="newCourse" v-on:keydown.enter="addCourse">
-            <button @click="addCourse">新增</button>
-        </p>
+        <span v-once :title="title1">{{title1}}</span> 
+        <course-add v-on:addcourse="addCourseHandle"></course-add>
         <p v-if="total == 0">没有任何课程</p>
-        <!-- 自定义组件 -->
         <course-list :courses="course"></course-list>
         <p>总共 {{totalCount}} 门课程</p>
     </div>
@@ -40,15 +34,40 @@
                     default: []
                 }
             },
+            methods: {
+                updatSelectCourse(current) {
+                    this.selectCourse = current
+                    console.log("-----", current)
+                },
+            },
             template: `
                 <div v-else>
                     <ul v-for="item in courses" :key="item" v-bind:title="item">
                         <!-- <li :class="{active: selectCourse === item}" @click="updatSelectCourse(item)">{{item}}</li> -->
-                        <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click="selectCourse = item">{{item}}</li>
+                        <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click=updatSelectCourse(item)>{{item}}</li>
                     </ul>
                 </div>
             `
+        })
 
+        Vue.component ('course-add', {
+            data() {
+                return {
+                    newCourse: "",
+                }
+            },
+            methods: {
+                addCourse() {
+                    this.$emit('addcourse', this.newCourse)
+                    this.newCourse = ""
+                },
+            },
+            template: `
+                <p>
+                    <input type="text" v-model="newCourse" v-on:keydown.enter="addCourse">
+                    <button @click="addCourse">新增</button>
+                </p>
+            `
         })
 
         function getCourses() {
@@ -65,27 +84,18 @@
                 title1: "hello wo bu bian",
                 newCourse: '',
                 course: [], //"c++", "java", "python"
-                // selectCourse: "",
                 totalCount: 0
-            },
-            methods: {
-                addCourse() {
-                    if (this.newCourse == "") {
-                        this.course = []
-                    } else {
-                        this.course.push(this.newCourse)
-                        this.newCourse = ""
-                    }
-                },
-                // updatSelectCourse(current) {
-                //     this.selectCourse = current
-                //     console.log("-----", current)
-                // },
             },
             computed: {
                 total() {
                     return this.course.length 
                 }
+            },
+            methods: {
+                addCourseHandle(course) {
+                    console.log("--addCourseHandle---", course)
+                    this.course.push(course)
+                },
             },
             watch: {
                 course: {
