@@ -16,7 +16,7 @@
         <span v-once :title="title1">{{title1}}</span> 
         <course-add v-on:addcourse="addCourseHandle"></course-add>
         <p v-if="total == 0">没有任何课程</p>
-        <course-list :courses="course"></course-list>
+        <course-list :courses="courseList"></course-list>
         <p>总共 {{totalCount}} 门课程</p>
     </div>
 
@@ -82,23 +82,26 @@
             data: {
                 title: "hello vue !!!",
                 title1: "hello wo bu bian",
-                newCourse: '',
-                course: [], //"c++", "java", "python"
+                courseList: [], //"c++", "java", "python"
                 totalCount: 0
             },
             computed: {
                 total() {
-                    return this.course.length 
+                    return this.courseList.length 
                 }
             },
             methods: {
                 addCourseHandle(course) {
-                    console.log("--addCourseHandle---", course)
-                    this.course.push(course)
+                    if (course == "") {
+                        this.courseList = []
+                    } else {
+                        console.log("--addCourseHandle---", course)
+                        this.courseList.push(course)
+                    }
                 },
             },
             watch: {
-                course: {
+                courseList: {
                     immediate: true,
                     deep: true,
                     handler(newValue, oldValue) {
@@ -107,8 +110,7 @@
                 }
             },
             async created() {
-                const course = await getCourses()
-                this.course = course
+                this.courseList = await getCourses()
             },
         })        
 
