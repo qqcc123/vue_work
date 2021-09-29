@@ -14,7 +14,7 @@
             {{title}}
         </h2>
         <span v-once :title="title1">{{title1}}</span> 
-        <course-add v-on:addcourse="addCourseHandle"></course-add>
+        <course-add :value="newCourse" @input="newCourse=$event" v-on:addcourse="addCourseHandle"></course-add>
         <p v-if="total == 0">没有任何课程</p>
         <course-list :courses="courseList"></course-list>
         <p>总共 {{totalCount}} 门课程</p>
@@ -51,20 +51,18 @@
         })
 
         Vue.component ('course-add', {
-            data() {
-                return {
-                    newCourse: "",
-                }
-            },
+            props: ['value'],
             methods: {
                 addCourse() {
-                    this.$emit('addcourse', this.newCourse)
-                    this.newCourse = ""
+                    this.$emit('addcourse')
                 },
+                onInput(e) {
+                    this.$emit('input', e.target.value)
+                }
             },
             template: `
                 <p>
-                    <input type="text" v-model="newCourse" v-on:keydown.enter="addCourse">
+                    <input type="text" :value="value" v-on:input=onInput v-on:keydown.enter="addCourse">
                     <button @click="addCourse">新增</button>
                 </p>
             `
@@ -83,7 +81,8 @@
                 title: "hello vue !!!",
                 title1: "hello wo bu bian",
                 courseList: [], //"c++", "java", "python"
-                totalCount: 0
+                totalCount: 0,
+                newCourse: ""
             },
             computed: {
                 total() {
@@ -91,12 +90,13 @@
                 }
             },
             methods: {
-                addCourseHandle(course) {
-                    if (course == "") {
+                addCourseHandle() {
+                    if (this.newCourse == "") {
                         this.courseList = []
                     } else {
-                        console.log("--addCourseHandle---", course)
-                        this.courseList.push(course)
+                        console.log("--addCourseHandle---", this.newCourse)
+                        this.courseList.push(this.newCourse)
+                        this.newCourse = ""
                     }
                 },
             },
