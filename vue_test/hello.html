@@ -5,11 +5,22 @@
         .active {
             background-color: "#ff5d23";
         }
+
+        .message-tips-close {
+            float: right;
+        }
+
+        .message-box-close {
+            padding: 10px 20px;
+            background: #4fc08d;
+            border: 1px solid #42b983;
+        }
     </style>
 </head>
 
 <body>
     <div id="app">
+        <message-tips :show.sync="show">添加成功</message-tips>
         <h2 v-bind:title="title">
             {{title}}
         </h2>
@@ -22,6 +33,19 @@
 
     <script src="vue.js"></script>
     <script>
+        Vue.component('message-tips', {
+            props: {
+                show: false
+            },
+
+            template: `
+                <div class="message-box-close" v-if="show">
+                    <slot></slot>
+                    <span class="message-tips-close" @click="$emit('update:show', false)">X</span>
+                </div>    
+            `
+        })
+
         Vue.component('course-list', {
             data() {
                 return {
@@ -82,7 +106,8 @@
                 title1: "hello wo bu bian",
                 courseList: [], //"c++", "java", "python"
                 totalCount: 0,
-                newCourse: ""
+                newCourse: "",
+                show: false
             },
             computed: {
                 total() {
@@ -97,6 +122,7 @@
                         console.log("--addCourseHandle---", this.newCourse)
                         this.courseList.push(this.newCourse)
                         this.newCourse = ""
+                        this.show = true
                     }
                 },
             },
