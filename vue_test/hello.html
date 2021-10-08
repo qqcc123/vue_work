@@ -20,7 +20,10 @@
 
 <body>
     <div id="app">
-        <message-tips :show.sync="show">添加成功</message-tips>
+        <message-tips :show.sync="show">
+            <template v-slot:first>添加</template>
+            <template>成功</template>
+        </message-tips>
         <h2 v-bind:title="title">
             {{title}}
         </h2>
@@ -40,6 +43,7 @@
 
             template: `
                 <div class="message-box-close" v-if="show">
+                    <strong><slot name="first"></slot></strong>
                     <slot></slot>
                     <span class="message-tips-close" @click="$emit('update:show', false)">X</span>
                 </div>    
