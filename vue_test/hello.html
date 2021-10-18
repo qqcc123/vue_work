@@ -10,35 +10,61 @@
             float: right;
         }
 
-        .message-box-close {
-            padding: 10px 20px;
+        .success { 
+            padding: 10px 20px; 
             background: #4fc08d;
-            border: 1px solid #42b983;
+            border: 1px solid #42b983; 
+         }
+
+        .warning {
+            padding: 10px 20px; 
+            background: #f66; 
+            border: 1px solid #d63200; 
         }
     </style>
 </head>
 
 <body>
     <div id="app">
-        <message-tips :show.sync="show">
+        <message-tips :show.sync="showSuccess" class="success">
             <template v-slot:first>添加</template>
             <template>成功</template>
+        </message-tips>
+
+        <message-tips :show.sync="showWarn" class="warning"> 
+            <template v-slot:first> 
+                <strong>警告</strong> 
+            </template> 
+            <template v-slot:default> 
+                请输入课程名称！ 
+            </template> 
         </message-tips>
         <h2 v-bind:title="title">
             {{title}}
         </h2>
         <span v-once :title="title1">{{title1}}</span> 
         <course-add :value="newCourse" @input="newCourse=$event" v-on:addcourse="addCourseHandle"></course-add>
+        <batch-price-set :courses="courseList"></batch-price-set>
+        <batch-clear-tips></batch-clear-tips>
         <p v-if="total == 0">没有任何课程</p>
         <course-list :courses="courseList"></course-list>
         <p>总共 {{totalCount}} 门课程</p>
     </div>
 
+
     <script src="vue.js"></script>
     <script>
+        Vue.prototype.$bus = new Vue();
+
         Vue.component('message-tips', {
             props: {
                 show: false
+            },
+
+            mounted() {
+                this.$bus.$on('close-tips', ()=> {
+                    this.$emit('update:show', false)
+                })
             },
 
             template: `
@@ -48,6 +74,20 @@
                     <span class="message-tips-close" @click="$emit('update:show', false)">X</span>
                 </div>    
             `
+        })
+
+        Vue.component('batch-clear-tips', {
+
+            methods: {
+                clearTips() {
+                    this.$bus.$emit('close-tips')
+                }
+            },
+
+            template: `
+                <button @click='clearTips'>清空提示</button>
+            `
+
         })
 
         Vue.component('course-list', {
@@ -70,9 +110,9 @@
             },
             template: `
                 <div v-else>
-                    <ul v-for="item in courses" :key="item" v-bind:title="item">
+                    <ul v-for="item in courses" :key="item.name" v-bind:title="item.name">
                         <!-- <li :class="{active: selectCourse === item}" @click="updatSelectCourse(item)">{{item}}</li> -->
-                        <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click=updatSelectCourse(item)>{{item}}</li>
+                        <li :style="{backgroundColor: selectCourse === item ? '#ff5d23' : 'transparent'}" @click=updatSelectCourse(item.name)>{{item.name + ': ' + item.price}}</li>
                     </ul>
                 </div>
             `
@@ -96,10 +136,30 @@
             `
         })
 
+        Vue.component('batch-price-set', {
+            props: {
+                courses: {
+                    type: Array,
+                    default: []
+                }
+            },
+            methods: {
+                batchSetPrice() {
+                    this.courses.forEach(element => {
+                        Vue.set(element, 'price', 100)
+                    });
+                }
+            },
+
+            template: `
+                <button @click='batchSetPrice'>批量设置价格</button>
+            `
+        })
+
         function getCourses() {
             return new Promise(resolve => {
                 setTimeout(() => {
-                    resolve(["C++", "Java"]) 
+                    resolve([{'name': "C++", 'price': '0' }, {'name': "Java", 'price': '0'}]) 
                 }, 2000);
             })
         }
@@ -111,7 +171,8 @@
                 courseList: [], //"c++", "java", "python"
                 totalCount: 0,
                 newCourse: "",
-                show: false
+                showSuccess: false,
+                showWarn: false
             },
             computed: {
                 total() {
@@ -121,12 +182,13 @@
             methods: {
                 addCourseHandle() {
                     if (this.newCourse == "") {
-                        this.courseList = []
+                        //this.courseList = []
+                        this.showWarn = true
                     } else {
                         console.log("--addCourseHandle---", this.newCourse)
-                        this.courseList.push(this.newCourse)
+                        this.courseList.push({'name': this.newCourse, 'price': 0})
                         this.newCourse = ""
-                        this.show = true
+                        this.showSuccess = true
                     }
                 },
             },
@@ -142,7 +204,7 @@
             async created() {
                 this.courseList = await getCourses()
             },
-        })        
+        })  
 
         setTimeout(() => {
             app.title = "嘿嘿嘿 ！！！" ,
