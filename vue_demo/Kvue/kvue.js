@@ -1,9 +1,14 @@
 function defineReactive(obj, key, val) {
     observe(obj)
 
+    const dep = new Dep()
+
     Object.defineProperty(obj, key, {
         get() {
             console.log('get key: ', key)
+
+            dep && dep.addWatcher(Dep.target)
+            return val
         },
 
         set(v) {
@@ -39,7 +44,8 @@ function proxy(vm) {
 }
 
 class Compile {
-    constructor(el) {
+    constructor(el, vm) {
+        this.$vm = vm
         this.$el = document.querySelector(el)
         this.compile(this.$el)
     }
@@ -60,7 +66,7 @@ class Compile {
         })
     }
 
-    isDir(attr) {
+    isAttrStartK(attr) {
         return attr.startsWith("k-");
       }
 
@@ -69,7 +75,7 @@ class Compile {
             const attrName = attr.attrName
             const attrValue = attr.value
 
-            if (this.isDir(attrName)) {
+            if (this.isAttrStartK(attrName)) {
                 const dir = attrName.substring(2);
             }
         })
@@ -88,12 +94,12 @@ class Compile {
         return node.nodeType == 3 && /\{\{ .* \}\}/.test(node.textContent)
     }
 
-    text(node, exp) {
-        
+    text(node, kAttr) {
+        this.update(node, RegExp.$1, 'text')
     }
 
-    html() {
-        
+    html(node, kAttr) {
+        this.update(node, RegExp.$1, 'html')
     }
 
     textUpdater(node, exp) {
@@ -104,8 +110,13 @@ class Compile {
         node.innerHTML = exp
     }
 
-    update(vm, value, exp) {
+    update(node, exp, kAttr) {
+        const fn = this[kAttr + 'updater']
+        fn && fn(node, this.$vm[exp])
 
+        new watcher(this.$vm, exp, function(val){
+            fn && fn(node, val)
+        })
     }
 
     
@@ -124,7 +135,8 @@ class kvue {
         proxy(this)
 
         //3. 编译 （模板编译 dom渲染）
-        compile(this.$vm)
+        //this是为了获取根节点中的内容
+        compile(this.$vm, this)
     }
 }
 
@@ -147,10 +159,19 @@ class Observe {
 }
 
 class Watcher {
-    constructor() {
+    constructor(vm, exp, func) {
+        this.vm = vm
+        this.updateFunc = func
+        this.exp = exp
 
+        Dep.target = this
+        this.vm[this.exp] //获取节点的一个data数据属性,从而调起数据响应式函数，传递this
+        Dep.target = this
     }
 
+    update() {
+        this.updateFunc.call(this.vm, this.vm[this.exp])
+    }
 }
 
 class Dep {
@@ -163,7 +184,9 @@ class Dep {
     }
 
     notify() {
-
+        this.deps.forEach((watch) => {
+            watch.update()
+        })
     }
 
 }

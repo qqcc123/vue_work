@@ -26,6 +26,21 @@
 
 <body>
     <div id="app">
+        <blog-post>
+            <template v-slot:header>
+              <h1>About Me</h1>
+            </template>
+            <p>Here's some page content, which will be included in vm.$slots.default, because it's not inside a named slot.</p>
+            <template v-slot:footer>
+              <p>Copyright 2016 Evan You</p>
+            </template>
+            <p>If I have some content down here, it will also be included in vm.$slots.default.</p>
+        </blog-post>
+        <h1>
+            <a name="hello-world" href="#hello-world">
+              Hello world!
+            </a>
+        </h1>
         <message-tips :show.sync="showSuccess" class="success">
             <template v-slot:first>添加</template>
             <template>成功</template>
@@ -55,6 +70,22 @@
     <script src="vue.js"></script>
     <script>
         Vue.prototype.$bus = new Vue();
+
+        Vue.component('blog-post', {
+                render: function (createElement) {
+                    var header = this.$slots.header
+                    var body   = this.$slots.default
+                    var footer = this.$slots.footer
+                    console.log("-------header--------", header)
+                    //console.log("-------header--elem------", header.element.innerText)
+                    console.log("-------body--------", body)
+                    return createElement('div', [
+                    createElement('header', header),
+                    createElement('main', body),
+                    createElement('footer', footer)
+                ])
+            }
+        })
 
         Vue.component('message-tips', {
             props: {
