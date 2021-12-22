@@ -1,0 +1,282 @@
+https://www.jianshu.com/p/550c553143ef //patch及VNode详解
+
+eg: function Vue (options) vue实例指针this中并不保存options内容，需自己另外存储该信息，因此this指针中并没有option相关信息
+src/core/instance/init.js 
+1. initMixin(Vue)
+定义_init(options)函数(在Vue构造函数种调用this._init(options))
+a: this指的是根Vue实例指针，在init函数定义中会给this中赋予一些新的属性
+b: 合并选项，此时this中新增$options，将vue实例中的用户options与原始options合并
+且，options中的data由一个数据对象变为一个函数指针
+c: initProxy(vm) vm与this指向同一个地址
+d: this指针（即vm）增加_Self属性指向this指针
+e: initLifecycle(vm)
+f: initEvents(vm)
+g: initRender(vm)
+h: callHook(vm, 'beforeCreate')
+i: initInjections(vm)
+j: initState(vm)
+k: initProvide(vm)
+l: callHook(vm, 'created')
+m: vm.$mount(vm.$options.el)
+
+vue/src/core/instance/proxy.js
+1. initProxy(vm)
+a: 将上述this指针（即vm）增加_renderProxy属性new Proxy(vm, handlers)
+
+vue/src/core/instance/lifecycle.js
+1. initLifecycle(vm)
+vm.$parent = parent
+vm.$root = parent ? parent.$root : vm
+vm.$children = []
+vm.$refs = {}
+vm._watcher = null
+vm._inactive = null
+vm._directInactive = false
+vm._isMounted = false
+vm._isDestroyed = false
+vm._isBeingDestroyed = false  
+
+
+vue/src/core/instance/render.js
+1. initRender(vm)
+a: this指针（即vm）增加卡槽函数 vm.$slots = resolveSlots(options._renderChildren, renderContext)
+vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
+vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
+
+
+
+vue/src/core/observer/index.js
+1: Observer(vm.options.data)
+a: this.value = value（value存储的是vue实例的data）
+   this.dep = new Dep()
+   this.vmCount = 0
+b: Object.defineProperty(obj, key, {
+    value: val,
+    enumerable: !!enumerable,
+    writable: true,
+    configurable: true
+  })
+  obj => value
+  key => '__ob__'
+  {}  => this
+  此步骤的作用是在vue实例的data对象中响应式一个上述的对象值
+c: walk(value)
+
+
+
+vue/src/core/observer/index.js
+1: defineReactive(obj, key, val)
+a：const dep = new Dep()
+b: Object.getOwnPropertyDescriptor(obj, key)
+   此步骤会从obj对象中找到key值，返回一个对象描述符，里面有默认设置，依赖该key的初始化，
+   类似
+   {
+	   configurable: true,
+	   enumerable: true,
+	   get: undefined
+	   set: undefined
+   } 
+   或者
+   {
+	   configurable: true,
+	   enumerable: true,
+	   value: 42,
+	   writable: true
+   }
+c: val = obj[key] (此处有条件判断)
+d: let childOb = !shallow && observe(val)
+   此处调用observe函数，如果val不是对象则直接返回，否则将val对象的各个值new Observer(val)
+e: Object.defineProperty(obj, key, {
+	   configurable: true,
+	   enumerable: true,
+	   get: funGet
+	   set: funSet
+	}
+	
+	funGet: { //getter依赖上述get函数
+	   const value = getter ? getter.call(obj) : val
+       if (Dep.target) {  //在初始化对应dom的时候watch会初始化并触发该get
+         dep.depend()     //每一个data中的值都对应一个dep
+         if (childOb) {
+           childOb.dep.depend()    
+           if (Array.isArray(value)) {
+             dependArray(value)
+           }
+         }
+       }
+       return value
+	}
+	
+	funSet: {
+	  const value = getter ? getter.call(obj) : val
+      if (newVal === value || (newVal !== newVal && value !== value)) {
+        return
+      }
+      if (process.env.NODE_ENV !== 'production' && customSetter) {
+        customSetter()
+      }
+      if (getter && !setter) return
+      if (setter) {
+        setter.call(obj, newVal)
+      } else {
+        val = newVal
+      }
+      childOb = !shallow && observe(newVal)
+      dep.notify()
+    }
+	
+   
+
+vue/src/core/observer/dep.js
+1: 构造函数：初始化id及subs[] (id似乎是全局id, 类似c 中static属性)
+
+
+vue/src/platforms/web/entry-runtime-with-compiler.js
+1: Vue.prototype.$mount = function
+2: el = el && query(el)
+3: const options = this.$options
+a: if (!options.rende) {
+	  let template = options.template
+      if (template) {   //template定义在option中
+         if (typeof template === 'string') {
+             if (template.charAt(0) === '#') {
+                template = idToTemplate(template)
+			 }
+		 } else if (template.nodeType) {
+		    template = template.innerHTML
+		 } else {
+			return this
+		 }
+	  } else if (el) { //template定义在外部
+		 template = getOuterHTML(el)
+	  }
+	  
+	  // 生成编译函数render及staticRenderFns
+	  const { render, staticRenderFns } = compileToFunctions(template, {
+          outputSourceRange: process.env.NODE_ENV !== 'production',
+          shouldDecodeNewlines,
+          shouldDecodeNewlinesForHref,
+          delimiters: options.delimiters,
+          comments: options.comments
+        }, this)
+      options.render = render
+      options.staticRenderFns = staticRenderFns
+	}
+b: return mount.call(this, el, hydrating)
+
+vue/src/platforms/web/runtime/index.js	// public mount method
+Vue.prototype.$mount = function()
+1: el = el && inBrowser ? query(el) : undefined
+2: return mountComponent(this, el, hydrating) //this如上vue实例对象
+
+
+vue/src/core/instance/lifecycle.js
+function mountComponent()
+1:  vm.$el = el
+    if (!vm.$options.render) {
+        vm.$options.render = createEmptyVNode
+	}
+2:  callHook(vm, 'beforeMount')	
+3:  let updateComponent
+    updateComponent = () => {
+      vm._update(vm._render(), hydrating)  //_update 在lifecycle.js的lifecycleMixin中定义
+    }
+4:  new Watcher(vm, updateComponent, noop, {
+        before () {
+        if (vm._isMounted && !vm._isDestroyed) {
+           callHook(vm, 'beforeUpdate')
+        }
+      }
+    }, true /* isRenderWatcher */)
+5： if (vm.$vnode == null) {
+	   vm._isMounted = true
+	   callHook(vm, 'mounted')
+    }
+    return vm
+
+
+vue/src/core/observer/watcher.js  //class Watcher
+1: constructor(vm, expOrFn, cb, options, isRenderWatcher)  //如上mountComponent第四点
+a： this.vm = vm
+    if (isRenderWatcher) {
+      vm._watcher = this
+    }
+    vm._watchers.push(this)
+
+b:  if (options) {
+      this.deep = !!options.deep
+      this.user = !!options.user
+      this.lazy = !!options.lazy
+      this.sync = !!options.sync
+      this.before = options.before
+    } else {
+      this.deep = this.user = this.lazy = this.sync = false
+    }
+    this.cb = cb
+    this.id = uid // uid for batching
+    this.active = true
+    this.dirty = this.lazy // for lazy watchers
+    this.deps = []
+    this.newDeps = []
+    this.depIds = new Set()
+    this.newDepIds = new Set()
+	this.expression = process.env.NODE_ENV !== 'production' ? expOrFn.toString() : ''
+
+c: 	if (typeof expOrFn === 'function') {
+      this.getter = expOrFn
+    } else {
+      this.getter = parsePath(expOrFn)
+      if (!this.getter) {
+        this.getter = noop
+	  }	
+	}	  
+	this.value = this.lazy ? undefined : this.get()
+	
+d： get() {
+		let value= this.getter.call(vm, vm) //调用的是updateComponent
+	}
+	
+
+vue/src/core/instance/lifecycle.js
+function lifecycleMixin()
+1: Vue.prototype._update = function (VNode, hydrating) {
+	if (!prevVnode) { // initial render
+      vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
+    } else { // updates
+      vm.$el = vm.__patch__(prevVnode, vnode)
+    }
+}
+
+vue/src/platforms/web/runtime/index.js
+Vue.prototype.__patch__ = inBrowser ? patch : noop  //// install platform patch function
+
+
+vue/src/core/vdom/patch.js
+function patch (oldVnode, vnode, hydrating, removeOnly)
+https://segmentfault.com/a/1190000022133023
+1 如果新节点为空，此时旧节点存在（组件销毁时），调用旧节点destroy生命周期函数
+2 如果旧节点为空，根据新节点创建DOM
+3 其他（如果新旧节点都存在）
+
+a 旧节点不是DOM(组件节点)，且新旧节点相同
+
+执行patchVnode
+b 旧节点是DOM元素或者两个节点不相同
+
+创建新节点DOM，销毁旧节点以及DOM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
