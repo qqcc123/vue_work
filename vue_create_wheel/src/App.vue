@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png">
     <div id="nav">
       <router-link to='/About'>About</router-link> |
       <router-link to='/HelloWorld'>HelloWorld</router-link>

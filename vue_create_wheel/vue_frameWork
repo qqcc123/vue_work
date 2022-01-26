@@ -1,5 +1,25 @@
 https://www.jianshu.com/p/550c553143ef //patch及VNode详解
 
+C++和python的多线程区别
+C++客户端dump获取原理
+红黑树
+
+https://zhuanlan.zhihu.com/p/115112361 //await async 实现原理
+fn => (...rest) => callback => fn(...rest, callback)
+function a(fn) {
+  function b(...rest) {
+    function c(callback) {
+       return fn(...rest, callback)
+    }
+  }
+}
+
+https://zhuanlan.zhihu.com/p/33058983  //浏览器事件循环 宏任务 微任务(写的很好)
+http://lynnelv.github.io/js-event-loop-browser 
+https://blog.csdn.net/weixin_48726650/article/details/107067389
+https://www.cnblogs.com/freshfish/p/3403436.html
+https://blog.csdn.net/wu_xianqiang/article/details/105811147
+
 eg: function Vue (options) vue实例指针this中并不保存options内容，需自己另外存储该信息，因此this指针中并没有option相关信息
 src/core/instance/init.js 
 1. initMixin(Vue)
@@ -264,6 +284,109 @@ a 旧节点不是DOM(组件节点)，且新旧节点相同
 b 旧节点是DOM元素或者两个节点不相同
 
 创建新节点DOM，销毁旧节点以及DOM
+
+
+
+/////////////////////////////////////////////////////////////////////////
+
+//初始化
+src/core/instance/init.js
+_init ->
+Detail {
+	initLifecycle(vm)
+    initEvents(vm)
+    initRender(vm)
+    callHook(vm, 'beforeCreate')
+    initInjections(vm) // resolve injections before data/props
+    initState(vm)
+    initProvide(vm) // resolve provide after data/props
+    callHook(vm, 'created')
+	
+	vm.$mount(vm.$options.el)
+}
+
+src/platforms/web/runtime/index.js
+mount -> 
+mountComponent  
+
+src/core/instance/lifecycle.js
+mountComponent ->
+Detail {
+	callHook(vm, 'beforeMount')
+	updateComponent = () {
+	   vm._update(vm._render(), hydrating)
+	}
+	callHook(vm, 'beforeUpdate')
+}
+new Watcher(vm, updateComponent)
+Detail {
+	callHook(vm, 'mounted')
+}
+
+src/core/observer/watcher.js
+定义this.getter函数（updateComponent）
+调用get函数获取当前dom的更新函数
+
+src/core/instance/render.js 
+_render -> （生成Vnode）
+Detail {
+	const { render, _parentVnode } = vm.$options
+	vnode = render.call(vm._renderProxy, vm.$createElement) (调用_c渲染函数)
+	vnode.parent = _parentVnode
+}
+
+//更新
+src/core/observer/dep.js
+notify ->
+Detail {
+	subs[i].update()
+}
+
+src/core/observer/watcher.js
+update
+queueWatcher(this)
+
+
+src/core/observer/scheduler.js
+queueWatcher
+Detail {
+	queue.push(watcher)
+	nextTick(flushSchedulerQueue) //flushSchedulerQueue异步执行，且微任务
+}
+
+flushSchedulerQueue
+Detail {
+	queue.sort((a, b) => a.id - b.id)
+	watcher.run()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
